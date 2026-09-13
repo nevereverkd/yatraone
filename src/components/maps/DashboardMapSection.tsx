@@ -61,11 +61,12 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const googleMapRef = useRef<any>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const zoneLayerRef = useRef<L.LayerGroup | null>(null);
   const watchIdRef = useRef<number | null>(null);
 
-  const [mapStyle, setMapStyle] = useState<'voyager' | 'osm' | 'satellite' | 'google_roadmap' | 'google_satellite' | 'dark_heatmap'>('dark_heatmap');
+  const [mapStyle, setMapStyle] = useState<'voyager' | 'osm' | 'satellite' | 'google_roadmap' | 'google_satellite' | 'dark_heatmap'>('google_roadmap');
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [selectedEntityInfo, setSelectedEntityInfo] = useState<any | null>(null);
 
@@ -333,6 +334,44 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
         mapInstanceRef.current = null;
       }
 
+      // Priority 1: Official Google Maps JavaScript API Engine
+      if (window.google && window.google.maps) {
+        try {
+          const mapType = mapStyle === 'google_satellite' || mapStyle === 'satellite' ? 'satellite' : 'roadmap';
+          const gmap = new window.google.maps.Map(mapContainerRef.current, {
+            center: { lat: userCoords.lat, lng: userCoords.lng },
+            zoom: 15,
+            mapTypeId: mapType,
+            mapTypeControl: true,
+            streetViewControl: true,
+            zoomControl: true,
+            fullscreenControl: true,
+          });
+
+          googleMapRef.current = gmap;
+
+          // User location marker on Google Map
+          new window.google.maps.Marker({
+            position: { lat: userCoords.lat, lng: userCoords.lng },
+            map: gmap,
+            title: userCoords.locationName,
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: '#0284C7',
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 2,
+            }
+          });
+
+          return;
+        } catch (e) {
+          console.warn('Google Maps SDK init warning, falling back to tile layer:', e);
+        }
+      }
+
+      // Priority 2: Tile Layer Map (Google tile endpoints)
       const map = L.map(mapContainerRef.current, {
         center: [userCoords.lat, userCoords.lng],
         zoom: 15,
@@ -343,7 +382,7 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
       mapInstanceRef.current = map;
 
       // Tile layer (supports Google Maps API tiles & Dark Heatmap mode)
-      let tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+      let tileUrl = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
       let maxZoom = 19;
       if (mapStyle === 'osm') {
         tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -359,7 +398,7 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
 
       // Attribution
       L.control.attribution({ position: 'bottomright', prefix: false })
-        .addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors')
+        .addAttribution('&copy; Google Maps API')
         .addTo(map);
 
       const zoneLayer = L.layerGroup().addTo(map);
