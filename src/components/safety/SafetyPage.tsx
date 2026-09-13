@@ -115,10 +115,57 @@ export const SafetyPage: React.FC<SafetyPageProps> = ({
   const [activeHeatMode, setActiveHeatMode] = useState<'safety' | 'trending' | 'all'>('all');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<any>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
+
+  const handleLocateDevice = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsLocating(true);
+
+    const onSuccess = (pos: GeolocationPosition) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      setIsLocating(false);
+
+      if (googleMapRef.current && window.google) {
+        googleMapRef.current.panTo({ lat, lng });
+        googleMapRef.current.setZoom(16);
+      } else if (leafletMapRef.current) {
+        leafletMapRef.current.flyTo([lat, lng], 16, { duration: 1.2 });
+
+        const userHtml = `
+          <div class="relative flex items-center justify-center" style="transform: translate(-50%, -50%);">
+            <div class="absolute w-12 h-12 rounded-full bg-cyan-400/40 animate-ping"></div>
+            <div class="w-6 h-6 rounded-full bg-cyan-500 border-2 border-white shadow-xl flex items-center justify-center text-white">
+              <div class="w-2 h-2 rounded-full bg-white"></div>
+            </div>
+          </div>
+        `;
+        const userIcon = L.divIcon({ html: userHtml, className: 'my-gps-pin', iconSize: [48, 48] });
+        L.marker([lat, lng], { icon: userIcon }).addTo(leafletMapRef.current);
+      }
+    };
+
+    const onError = () => {
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (err) => {
+          setIsLocating(false);
+          alert(`Location permission blocked or unable to fetch GPS coordinates: ${err.message}`);
+        },
+        { enableHighAccuracy: false, timeout: 15000 }
+      );
+    };
+
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, { enableHighAccuracy: true, timeout: 8000 });
+  };
 
   const filteredZones = LIVE_RISK_ZONES.filter(z => {
     const matchCity = cityFilter === 'all' || z.city.toLowerCase() === cityFilter.toLowerCase();
@@ -387,6 +434,15 @@ export const SafetyPage: React.FC<SafetyPageProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Trending Picks</span>
+          </button>
+          <button
+            onClick={handleLocateDevice}
+            disabled={isLocating}
+            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-sm shrink-0"
+            title="Request GPS location and center map to your live position"
+          >
+            <Compass className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
+            <span>{isLocating ? 'Acquiring GPS...' : '📍 Locate My Device'}</span>
           </button>
         </div>
 

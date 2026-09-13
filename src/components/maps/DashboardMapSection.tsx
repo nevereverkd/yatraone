@@ -114,6 +114,8 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
   // ----------------------------------------------------
   // Location Access / Geolocation Handler
   // ----------------------------------------------------
+  // Location Access / Geolocation Handler
+  // ----------------------------------------------------
   const handleEnableLocation = () => {
     if (!navigator.geolocation) {
       setErrorMessage('Geolocation is not supported by your browser.');
@@ -124,33 +126,67 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
     setGpsStatus('locating');
     setErrorMessage(null);
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: Math.round(pos.coords.accuracy),
-          isRealGPS: true,
-          locationName: 'Live Device GPS Location'
-        };
-        setUserCoords(coords);
-        setIsGpsActive(true);
-        setGpsStatus('active');
+    const onSuccess = (pos: GeolocationPosition) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const accuracy = Math.round(pos.coords.accuracy);
 
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.flyTo([coords.lat, coords.lng], 16, { duration: 1.2 });
-        }
-      },
-      (err) => {
-        console.warn('Geolocation error:', err.message);
-        setGpsStatus('denied');
-        setErrorMessage(
-          err.code === 1 
-            ? 'Location access was blocked or denied in your browser settings. You can pick any Indian heritage preset below to simulate your location.'
-            : `Unable to retrieve precise GPS coordinates: ${err.message}`
-        );
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+      const coords = {
+        lat,
+        lng,
+        accuracy,
+        isRealGPS: true,
+        locationName: 'Live Device Location'
+      };
+
+      setUserCoords(coords);
+      setIsGpsActive(true);
+      setGpsStatus('active');
+
+      // Center Google Map or Leaflet Map
+      if (googleMapRef.current && window.google) {
+        googleMapRef.current.panTo({ lat, lng });
+        googleMapRef.current.setZoom(16);
+      } else if (mapInstanceRef.current) {
+        mapInstanceRef.current.flyTo([lat, lng], 16, { duration: 1.2 });
+      }
+
+      // Reverse geocode to get actual city / area name
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.display_name) {
+            const shortName = data.address?.suburb || data.address?.city || data.address?.town || data.display_name.split(',')[0];
+            setUserCoords(prev => ({
+              ...prev,
+              locationName: `📍 ${shortName} (Live GPS)`
+            }));
+          }
+        })
+        .catch(() => {});
+    };
+
+    const onError = (err: GeolocationPositionError) => {
+      console.warn('High accuracy geolocation failed, trying standard accuracy:', err.message);
+      // Fallback: Try low accuracy positioning if high accuracy times out
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (fallbackErr) => {
+          setGpsStatus('denied');
+          setErrorMessage(
+            fallbackErr.code === 1 
+              ? 'Location access was blocked in browser settings. Click "Presets" to simulate location.'
+              : `Unable to retrieve GPS position: ${fallbackErr.message}`
+          );
+        },
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 }
+      );
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      onSuccess,
+      onError,
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
     );
   };
 
@@ -160,17 +196,18 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
         setUserCoords(prev => ({
           ...prev,
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
+          lat,
+          lng,
           accuracy: Math.round(pos.coords.accuracy),
           isRealGPS: true,
-          locationName: 'Live Device GPS Location'
         }));
       },
       (err) => console.warn('Watch error:', err.message),
-      { enableHighAccuracy: true, maximumAge: 4000 }
+      { enableHighAccuracy: false, maximumAge: 5000 }
     );
 
     return () => {
@@ -194,13 +231,24 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
     setErrorMessage(null);
     setShowPresetDropdown(false);
 
-    if (mapInstanceRef.current) {
+    if (googleMapRef.current && window.google) {
+      googleMapRef.current.panTo({ lat: preset.lat, lng: preset.lng });
+      googleMapRef.current.setZoom(15);
+    } else if (mapInstanceRef.current) {
       mapInstanceRef.current.flyTo([preset.lat, preset.lng], 15, { duration: 1 });
     }
   };
 
   const handleCenterOnUser = () => {
-    if (mapInstanceRef.current) {
+    if (!userCoords.isRealGPS) {
+      handleEnableLocation();
+      return;
+    }
+
+    if (googleMapRef.current && window.google) {
+      googleMapRef.current.panTo({ lat: userCoords.lat, lng: userCoords.lng });
+      googleMapRef.current.setZoom(16);
+    } else if (mapInstanceRef.current) {
       mapInstanceRef.current.flyTo([userCoords.lat, userCoords.lng], 16, { duration: 1 });
     }
   };
