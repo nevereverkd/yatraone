@@ -65,7 +65,7 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
   const zoneLayerRef = useRef<L.LayerGroup | null>(null);
   const watchIdRef = useRef<number | null>(null);
 
-  const [mapStyle, setMapStyle] = useState<'voyager' | 'osm' | 'satellite' | 'google_roadmap' | 'google_satellite' | 'dark_heatmap'>('google_roadmap');
+  const [mapStyle, setMapStyle] = useState<'voyager' | 'osm' | 'satellite' | 'google_roadmap' | 'google_satellite' | 'dark_heatmap'>('dark_heatmap');
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [selectedEntityInfo, setSelectedEntityInfo] = useState<any | null>(null);
 
@@ -662,6 +662,10 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
                 </span>
               </span>
 
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-[#ECFDF5] text-[#047857] text-[11px] font-bold border border-[#A7F3D0]">
+                <span>Google Maps Connected ✅</span>
+              </span>
+
               {isGpsActive && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#059669] bg-[#ECFDF5] px-2 py-0.5 rounded-md">
                   <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
@@ -762,6 +766,37 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Map Layer Style Selector Pills */}
+            <div className="flex items-center bg-[#FAF8F5] p-1 rounded-2xl border border-[#EAE5DC] text-xs font-bold gap-1">
+              <button
+                onClick={() => setMapStyle('dark_heatmap')}
+                className={`px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  mapStyle === 'dark_heatmap' ? 'bg-[#0B132B] text-cyan-300 shadow-sm' : 'text-[#665E55] hover:text-[#191715]'
+                }`}
+                title="Neon Cyan Glowing Heatmap Theme"
+              >
+                🌙 Neon Heatmap
+              </button>
+              <button
+                onClick={() => setMapStyle('google_roadmap')}
+                className={`px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  mapStyle === 'google_roadmap' ? 'bg-[#10B981] text-white shadow-sm' : 'text-[#665E55] hover:text-[#191715]'
+                }`}
+                title="Google Maps Roadmap View"
+              >
+                🗺️ Google Map
+              </button>
+              <button
+                onClick={() => setMapStyle('google_satellite')}
+                className={`px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  mapStyle === 'google_satellite' ? 'bg-[#1E1B4B] text-white shadow-sm' : 'text-[#665E55] hover:text-[#191715]'
+                }`}
+                title="Google Maps Satellite Imagery"
+              >
+                🛰️ Satellite
+              </button>
             </div>
 
             {/* Fullscreen Expand Button */}
