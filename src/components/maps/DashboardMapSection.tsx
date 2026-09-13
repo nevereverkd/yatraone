@@ -97,11 +97,11 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
       };
     }
     return {
-      lat: 28.6506,
-      lng: 77.2301,
+      lat: 30.7020,
+      lng: 76.7150,
       accuracy: 15,
       isRealGPS: false,
-      locationName: 'Chandni Chowk / Delhi NCR'
+      locationName: 'Mohali / Chandigarh District'
     };
   });
 
