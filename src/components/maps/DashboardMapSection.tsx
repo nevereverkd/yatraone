@@ -62,6 +62,7 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const googleMapRef = useRef<any>(null);
+  const googleUserMarkerRef = useRef<any>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const zoneLayerRef = useRef<L.LayerGroup | null>(null);
   const watchIdRef = useRef<number | null>(null);
@@ -167,20 +168,42 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
     };
 
     const onError = (err: GeolocationPositionError) => {
-      console.warn('High accuracy geolocation failed, trying standard accuracy:', err.message);
-      // Fallback: Try low accuracy positioning if high accuracy times out
-      navigator.geolocation.getCurrentPosition(
-        onSuccess,
-        (fallbackErr) => {
+      console.warn('Browser GPS failed/blocked, falling back to IP Geolocation:', err.message);
+      
+      // Fallback: Fetch location via IP Geolocation API if browser GPS permission is denied or blocked
+      fetch('https://ipapi.co/json/')
+        .then(res => res.json())
+        .then(ipData => {
+          if (ipData && ipData.latitude && ipData.longitude) {
+            const lat = ipData.latitude;
+            const lng = ipData.longitude;
+
+            const coords = {
+              lat,
+              lng,
+              accuracy: 300,
+              isRealGPS: true,
+              locationName: `📍 ${ipData.city || 'Your City'}, ${ipData.region || ''} (Live IP)`
+            };
+
+            setUserCoords(coords);
+            setIsGpsActive(true);
+            setGpsStatus('active');
+
+            if (googleMapRef.current && window.google) {
+              googleMapRef.current.panTo({ lat, lng });
+              googleMapRef.current.setZoom(14);
+            } else if (mapInstanceRef.current) {
+              mapInstanceRef.current.flyTo([lat, lng], 14, { duration: 1.2 });
+            }
+          } else {
+            setGpsStatus('denied');
+          }
+        })
+        .catch(() => {
           setGpsStatus('denied');
-          setErrorMessage(
-            fallbackErr.code === 1 
-              ? 'Location access was blocked in browser settings. Click "Presets" to simulate location.'
-              : `Unable to retrieve GPS position: ${fallbackErr.message}`
-          );
-        },
-        { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 }
-      );
+          setErrorMessage('Unable to retrieve GPS. Click "Presets" to pick a city.');
+        });
     };
 
     navigator.geolocation.getCurrentPosition(
@@ -468,10 +491,34 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
     };
   }, [mapStyle, isExpanded]);
 
-  // Update markers when data changes
+  // Update markers when data changes (supports both Google Maps SDK and Leaflet)
   useEffect(() => {
-    if (!mapInstanceRef.current || !markersLayerRef.current || !zoneLayerRef.current) return;
-    renderMarkers(mapInstanceRef.current, markersLayerRef.current, zoneLayerRef.current);
+    if (googleMapRef.current && window.google && window.google.maps) {
+      googleMapRef.current.panTo({ lat: userCoords.lat, lng: userCoords.lng });
+
+      if (googleUserMarkerRef.current) {
+        googleUserMarkerRef.current.setMap(null);
+      }
+
+      googleUserMarkerRef.current = new window.google.maps.Marker({
+        position: { lat: userCoords.lat, lng: userCoords.lng },
+        map: googleMapRef.current,
+        title: `📍 ${userCoords.locationName}`,
+        zIndex: 99999,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: '#0284C7',
+          fillOpacity: 1,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 3,
+        }
+      });
+    }
+
+    if (mapInstanceRef.current && markersLayerRef.current && zoneLayerRef.current) {
+      renderMarkers(mapInstanceRef.current, markersLayerRef.current, zoneLayerRef.current);
+    }
   }, [userCoords, role, touristStops, businessItems, authorityItems, activeFilter]);
 
   // Master marker renderer

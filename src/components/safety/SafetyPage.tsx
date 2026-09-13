@@ -137,6 +137,14 @@ export const SafetyPage: React.FC<SafetyPageProps> = ({
       if (googleMapRef.current && window.google) {
         googleMapRef.current.panTo({ lat, lng });
         googleMapRef.current.setZoom(16);
+
+        new window.google.maps.Marker({
+          position: { lat, lng },
+          map: googleMapRef.current,
+          title: "📍 You (Your Live Location)",
+          zIndex: 99999,
+          animation: window.google.maps.Animation.DROP,
+        });
       } else if (leafletMapRef.current) {
         leafletMapRef.current.flyTo([lat, lng], 16, { duration: 1.2 });
 
