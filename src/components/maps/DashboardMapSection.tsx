@@ -65,7 +65,7 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
   const zoneLayerRef = useRef<L.LayerGroup | null>(null);
   const watchIdRef = useRef<number | null>(null);
 
-  const [mapStyle, setMapStyle] = useState<'voyager' | 'osm' | 'satellite'>('voyager');
+  const [mapStyle, setMapStyle] = useState<'voyager' | 'osm' | 'satellite' | 'google_roadmap' | 'google_satellite' | 'dark_heatmap'>('google_roadmap');
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [selectedEntityInfo, setSelectedEntityInfo] = useState<any | null>(null);
 
@@ -342,13 +342,17 @@ export const DashboardMapSection: React.FC<DashboardMapSectionProps> = ({
 
       mapInstanceRef.current = map;
 
-      // Tile layer
+      // Tile layer (supports Google Maps API tiles & Dark Heatmap mode)
       let tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
       let maxZoom = 19;
       if (mapStyle === 'osm') {
         tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-      } else if (mapStyle === 'satellite') {
-        tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      } else if (mapStyle === 'satellite' || mapStyle === 'google_satellite') {
+        tileUrl = 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}';
+      } else if (mapStyle === 'google_roadmap') {
+        tileUrl = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+      } else if (mapStyle === 'dark_heatmap') {
+        tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
       }
 
       L.tileLayer(tileUrl, { maxZoom, subdomains: 'abcd' }).addTo(map);
