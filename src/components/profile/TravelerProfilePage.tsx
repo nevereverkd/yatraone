@@ -144,17 +144,6 @@ export const TravelerProfilePage: React.FC<TravelerProfileProps> = ({
               <span>Digital Travel ID</span>
             </button>
 
-            {onLogout && (
-              <button
-                onClick={onLogout}
-                className="flex-1 sm:flex-none px-3.5 py-2 bg-[#991B1B]/80 hover:bg-[#991B1B] text-white text-xs font-bold rounded-xl border border-[#EF4444]/40 flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                title="Sign out from this account"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Sign Out</span>
-              </button>
-            )}
-
             <button
               onClick={onOpenSOS}
               className="flex-1 sm:flex-none px-4 py-2 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer animate-pulse"
@@ -634,6 +623,23 @@ export const TravelerProfilePage: React.FC<TravelerProfileProps> = ({
               Ministry of Tourism Verified Identity Protocol • Indian Standard Time (IST)
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Dedicated Sign Out / Account Section at the bottom of Profile */}
+      {onLogout && (
+        <div className="mt-8 pt-6 border-t border-[#EAE5DC] flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/60 p-4 sm:p-5 rounded-3xl border border-[#EAE5DC]">
+          <div>
+            <div className="text-sm font-bold text-[#1F1C18]">Account & Security</div>
+            <div className="text-xs text-[#8C827A]">Signed in as {email || fullName}. Click below to safely sign out.</div>
+          </div>
+          <button
+            onClick={onLogout}
+            className="w-full sm:w-auto px-5 py-2.5 bg-[#991B1B] hover:bg-[#7F1D1D] text-white text-xs font-bold rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sign Out of YatraOne</span>
+          </button>
         </div>
       )}
 

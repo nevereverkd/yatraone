@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { INDIA_TRIPS, TRANSIT_TOOLKIT, REGIONAL_FESTIVALS, FAMOUS_CULTURAL_BUYS } from './data/indiaTrips';
-import { Trip, ItineraryItem, ItineraryCategory, DayPlan } from './types/travel';
+import { INDIA_TRIPS } from './data/indiaTrips';
+import { Trip, ItineraryItem, ItineraryCategory } from './types/travel';
 import { Header } from './components/Header';
 import { TripHero } from './components/TripHero';
 import { TransitQuickBar } from './components/TransitQuickBar';
@@ -12,48 +12,26 @@ import { TouristToolkitModal } from './components/TouristToolkitModal';
 import { BudgetBreakdownModal } from './components/BudgetBreakdownModal';
 import { BottomNavBar, MainNavTab } from './components/BottomNavBar';
 import { TransitPage } from './components/pages/TransitPage';
-import { CulinaryPage } from './components/pages/CulinaryPage';
-import { FestivalsPage } from './components/pages/FestivalsPage';
-import { CraftsPage } from './components/pages/CraftsPage';
-import { TouristGuidePage } from './components/pages/TouristGuidePage';
+import { ExplorePage } from './components/pages/ExplorePage';
+import { GuideMarketplacePage } from './components/guides/GuideMarketplacePage';
+import { FloatingAssistantButton } from './components/chat/FloatingAssistantButton';
+import { TravelAssistantModal } from './components/chat/TravelAssistantModal';
 import { FairPriceScamEngine } from './components/trust/FairPriceScamEngine';
 import { SafetyPage } from './components/safety/SafetyPage';
 import { GlobalSOSModal } from './components/safety/GlobalSOSModal';
 import { AITripPlannerPage } from './components/ai/AITripPlannerPage';
-import { GuideMarketplacePage } from './components/guides/GuideMarketplacePage';
 import { IndustryAuthorityPortal } from './components/b2b/IndustryAuthorityPortal';
 import { RequestAssistanceModal } from './components/accessibility/RequestAssistanceModal';
-import { MainSidebarDrawer } from './components/navigation/MainSidebarDrawer';
 import { TravelerProfilePage } from './components/profile/TravelerProfilePage';
-import { SurroundingScannerModal } from './components/SurroundingScannerModal';
 import { FloatingSOSButton } from './components/safety/FloatingSOSButton';
-import { FloatingAssistantButton } from './components/chat/FloatingAssistantButton';
-import { TravelAssistantModal } from './components/chat/TravelAssistantModal';
-import { SOSIncident } from './types/trustEngine';
-import { AppEntity } from './types/entity';
-import { AuthUser, DEMO_ACCOUNTS } from './types/auth';
-import { LoginPage } from './components/auth/LoginPage';
-import { EntitySwitcherBar } from './components/navigation/EntitySwitcherBar';
 import { EcosystemFlowModal } from './components/dashboards/EcosystemFlowModal';
 import { BusinessDashboard } from './components/dashboards/BusinessDashboard';
 import { AuthorityDashboard } from './components/dashboards/AuthorityDashboard';
 import { DashboardMapSection } from './components/maps/DashboardMapSection';
-import { 
-  Sparkles, 
-  MapPin, 
-  Share2, 
-  Check, 
-  Train, 
-  Utensils, 
-  ShoppingBag, 
-  Landmark, 
-  Clock, 
-  IndianRupee,
-  Info,
-  Accessibility,
-  AlertOctagon,
-  LifeBuoy
-} from 'lucide-react';
+import { AppEntity } from './types/entity';
+import { AuthUser, DEMO_ACCOUNTS } from './types/auth';
+import { LoginPage } from './components/auth/LoginPage';
+import { MapPin, Check, AlertOctagon, LifeBuoy, Accessibility } from 'lucide-react';
 
 export default function App() {
   // Trips state with localStorage caching
@@ -83,6 +61,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<ItineraryCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeNavTab, setActiveNavTab] = useState<MainNavTab>('itinerary');
+  const [mapSafetySubTab, setMapSafetySubTab] = useState<'map' | 'safety'>('map');
 
   // User Authentication State (Role-gated dashboards: Tourist, Business, Authority)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
@@ -111,19 +90,15 @@ export default function App() {
   });
   const [isSOSOpen, setIsSOSOpen] = useState(false);
   const [isAssistanceOpen, setIsAssistanceOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   // Modals
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [focusLocation, setFocusLocation] = useState<{ lat: number; lng: number; title?: string } | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isToolkitOpen, setIsToolkitOpen] = useState(false);
-  const [toolkitTab, setToolkitTab] = useState<'transit' | 'festivals' | 'culinary' | 'shopping'>('transit');
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [currentLocationName, setCurrentLocationName] = useState('Chandni Chowk, Old Delhi');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Sync trips to localStorage
@@ -369,25 +344,13 @@ export default function App() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onOpenToolkit={() => {
-          setActiveNavTab('guide');
+          setActiveNavTab('guides');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        onShare={handleShare}
-        onOpenSOS={() => setIsSOSOpen(true)}
-        accessibilityMode={accessibilityMode}
-        onToggleAccessibility={() => setAccessibilityMode(!accessibilityMode)}
-        onToggleMenu={() => setIsSidebarOpen(true)}
         onOpenProfile={() => {
           setActiveNavTab('profile');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        onOpenScanner={() => setIsScannerOpen(true)}
-        onOpenMap={() => {
-          setActiveNavTab('map');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onOpenAssistant={() => setIsAssistantOpen(true)}
-        currentLocationName={currentLocationName}
         currentUser={currentUser}
         onLogout={handleLogout}
       />
@@ -461,7 +424,7 @@ export default function App() {
                   onOpenMap={() => setIsMapOpen(true)}
                   onOpenBudget={() => setIsBudgetOpen(true)}
                   onAddActivity={() => setIsAddOpen(true)}
-                  onOpenScanner={() => setIsScannerOpen(true)}
+                  onOpenScanner={() => {}}
                   selectedDayIndex={selectedDayIndex}
                 />
 
@@ -499,27 +462,58 @@ export default function App() {
               </div>
             )}
 
-            {/* DEDICATED LIVE MAP & GPS EXPLORER SECTION (Section 4.2 / Map Access) */}
-            {activeNavTab === 'map' && (
-              <div className="space-y-6">
-                <DashboardMapSection
-                  role="tourist"
-                  currentUser={currentUser}
-                />
+            {/* DEDICATED LIVE MAP + SAFETY HUB (Merged Section) */}
+            {activeNavTab === 'map_safety' && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                {/* Sub-tab Toggle */}
+                <div className="flex items-center bg-white rounded-2xl p-1 border border-[#EAE5DC] shadow-xs w-fit gap-1">
+                  <button
+                    id="map-safety-subtab-map"
+                    onClick={() => setMapSafetySubTab('map')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                      mapSafetySubTab === 'map'
+                        ? 'bg-[#C84B31] text-white shadow-sm'
+                        : 'text-[#665E55] hover:bg-[#FAF8F5]'
+                    }`}
+                  >
+                    <MapPin className="w-4 h-4" />
+                    Live Map
+                  </button>
+                  <button
+                    id="map-safety-subtab-safety"
+                    onClick={() => setMapSafetySubTab('safety')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                      mapSafetySubTab === 'safety'
+                        ? 'bg-[#E11D48] text-white shadow-sm'
+                        : 'text-[#665E55] hover:bg-[#FAF8F5]'
+                    }`}
+                  >
+                    <AlertOctagon className="w-4 h-4" />
+                    Safety & Risk
+                  </button>
+                </div>
+
+                {/* Live Map Sub-view */}
+                {mapSafetySubTab === 'map' && (
+                  <DashboardMapSection
+                    role="tourist"
+                    currentUser={currentUser}
+                  />
+                )}
+
+                {/* Safety Heatmap Sub-view */}
+                {mapSafetySubTab === 'safety' && (
+                  <SafetyPage
+                    accessibilityMode={accessibilityMode}
+                    onOpenSOS={() => setIsSOSOpen(true)}
+                  />
+                )}
               </div>
             )}
 
             {/* PRD TAB: FAIR PRICE & HOTEL TRUST ENGINE (Section 4.1) */}
             {activeNavTab === 'trust' && (
               <FairPriceScamEngine
-                accessibilityMode={accessibilityMode}
-                onOpenSOS={() => setIsSOSOpen(true)}
-              />
-            )}
-
-            {/* PRD TAB: SAFETY & SOS HEATMAP (Section 4.2) */}
-            {activeNavTab === 'safety' && (
-              <SafetyPage
                 accessibilityMode={accessibilityMode}
                 onOpenSOS={() => setIsSOSOpen(true)}
               />
@@ -540,11 +534,9 @@ export default function App() {
               />
             )}
 
-            {/* PRD TAB: VERIFIED LOCAL GUIDE MARKETPLACE (Section 4.4) */}
+            {/* PRD TAB: VERIFIED LOCAL GUIDE MARKETPLACE */}
             {activeNavTab === 'guides' && (
-              <GuideMarketplacePage
-                accessibilityMode={accessibilityMode}
-              />
+              <GuideMarketplacePage accessibilityMode={accessibilityMode} />
             )}
 
             {/* PRD TAB: INDUSTRY & AUTHORITY B2B PORTAL (Section 5) */}
@@ -557,24 +549,9 @@ export default function App() {
               <TransitPage />
             )}
 
-            {/* TAB: FOOD SAFETY & CULINARY (Dedicated Full Page) */}
-            {activeNavTab === 'culinary' && (
-              <CulinaryPage />
-            )}
-
-            {/* TAB: FESTIVALS & CELEBRATIONS (Dedicated Full Page) */}
-            {activeNavTab === 'festivals' && (
-              <FestivalsPage />
-            )}
-
-            {/* TAB: CULTURAL BUYS & GI CRAFTS (Dedicated Full Page) */}
-            {activeNavTab === 'crafts' && (
-              <CraftsPage />
-            )}
-
-            {/* TAB: TOURIST GUIDE & UPLOAD INFORMATION CENTER (Dedicated Full Page) */}
-            {activeNavTab === 'guide' && (
-              <TouristGuidePage />
+            {/* TAB: EXPLORE (Culinary + Festivals + Crafts + Guides unified) */}
+            {activeNavTab === 'explore' && (
+              <ExplorePage accessibilityMode={accessibilityMode} />
             )}
 
             {/* TAB: TRAVELER PROFILE & CREDENTIALS PAGE */}
@@ -604,7 +581,6 @@ export default function App() {
             setActiveNavTab(tab);
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          onOpenMenu={() => setIsSidebarOpen(true)}
           onOpenSOS={() => setIsSOSOpen(true)}
           accessibilityMode={accessibilityMode}
         />
@@ -626,27 +602,7 @@ export default function App() {
         city={currentDay.city}
       />
 
-      {/* 3-Line Menu Drawer (Upper Left Corner) */}
-      <MainSidebarDrawer
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        activeTab={activeNavTab}
-        onSelectTab={(tab) => {
-          setActiveNavTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onOpenSOS={() => setIsSOSOpen(true)}
-        accessibilityMode={accessibilityMode}
-        onToggleAccessibility={() => setAccessibilityMode(!accessibilityMode)}
-        onOpenProfile={() => {
-          setActiveNavTab('profile');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        currentEntity={currentEntity}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        onOpenEcosystemModal={() => setIsEcosystemModalOpen(true)}
-      />
+
 
       {/* 3-Entity Unified Ecosystem Overview Modal */}
       <EcosystemFlowModal
@@ -690,7 +646,6 @@ export default function App() {
       <TouristToolkitModal
         isOpen={isToolkitOpen}
         onClose={() => setIsToolkitOpen(false)}
-        initialTab={toolkitTab}
       />
 
       {/* Budget Breakdown Modal */}
@@ -701,40 +656,26 @@ export default function App() {
         allItems={allItems}
       />
 
-      {/* Surrounding Area Live Scanner & Radar Modal */}
-      <SurroundingScannerModal
-        isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        currentTrip={currentTrip}
-        onAddStopToDay={(item) => {
-          handleAddItem(item);
-          showToast(`Added "${item.title}" to Day ${currentDay.dayNumber} itinerary`);
-        }}
-        userCoords={userCoords}
-        onUpdateUserCoords={(coords) => {
-          setUserCoords({ lat: coords.lat, lng: coords.lng });
-          setCurrentLocationName(coords.locationName);
-          showToast(`Radar locked to: ${coords.locationName}`);
-        }}
-        currentLocationName={currentLocationName}
-      />
-
-      {/* Permanent SOS Button in the Bottom Right Corner of the UI (Tourist Dashboard Only) */}
+      {/* Permanent SOS Button */}
       {currentEntity === 'tourist' && (
         <FloatingSOSButton onOpenSOS={() => setIsSOSOpen(true)} />
       )}
 
-      {/* Floating Sahayak AI Travel Assistant Button (Tourist Dashboard Only) */}
+      {/* Floating Sahayak AI Travel Assistant Button */}
       {currentEntity === 'tourist' && (
         <FloatingAssistantButton onOpenAssistant={() => setIsAssistantOpen(true)} />
       )}
 
-      {/* Dedicated Travel & App Feature Assistant Modal */}
+      {/* Sahayak AI Travel Assistant Modal */}
       <TravelAssistantModal
         isOpen={isAssistantOpen}
         onClose={() => setIsAssistantOpen(false)}
-        onOpenMap={() => setIsMapOpen(true)}
-        onOpenScanner={() => setIsScannerOpen(true)}
+        onOpenMap={() => {
+          setActiveNavTab('map_safety');
+          setMapSafetySubTab('map');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenScanner={() => {}}
         onOpenSOS={() => setIsSOSOpen(true)}
         onOpenTrust={() => {
           setActiveNavTab('trust');
